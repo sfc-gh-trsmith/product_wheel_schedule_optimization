@@ -34,26 +34,31 @@ echo "=========================================="
 
 if should_run_step "sql"; then
     echo ""
-    echo "[1/5] Setting up database, warehouse, schemas, and tables..."
+    echo "[1/6] Setting up database, warehouse, schemas, and tables..."
     snow sql -f "${PROJECT_DIR}/sql/01_setup.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
 
     echo ""
-    echo "[2/5] Creating data generation stored procedure and seeding data..."
+    echo "[2/6] Creating data generation stored procedure and seeding data..."
     snow sql -f "${PROJECT_DIR}/sql/02_seed_data.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
     echo "  Running SP_GENERATE_ALL_DATA()..."
     snow sql -q "USE ROLE SYSADMIN; USE WAREHOUSE PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH; CALL PRODUCT_WHEEL_OPT.ATOMIC.SP_GENERATE_ALL_DATA();" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+
+    echo ""
+    echo "[2.5/6] Uploading PuLP wheel and creating solver stored procedure..."
+    snow sql -q "USE ROLE SYSADMIN; PUT file://${PROJECT_DIR}/streamlit/PuLP-2.9.0-py3-none-any.whl @PRODUCT_WHEEL_OPT.RAW.DATA_STAGE/libs/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+    snow sql -f "${PROJECT_DIR}/sql/05_solve_line_sp.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
 fi
 
 if should_run_step "sql" || should_run_step "notebook"; then
     echo ""
-    echo "[3/5] Creating GPU compute pool and external access..."
+    echo "[3/6] Creating GPU compute pool and external access..."
     snow sql -q "USE ROLE SYSADMIN; GRANT CREATE COMPUTE POOL ON ACCOUNT TO ROLE SYSADMIN;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}" || true
     snow sql -f "${PROJECT_DIR}/sql/03_gpu_infra.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
 fi
 
 if should_run_step "notebook"; then
     echo ""
-    echo "[4/5] Uploading notebook and creating Snowflake notebook..."
+    echo "[4/6] Uploading notebook and creating Snowflake notebook..."
     snow sql -q "USE ROLE SYSADMIN; USE WAREHOUSE PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH; PUT file://${PROJECT_DIR}/notebooks/product_wheel_optimizer.ipynb @PRODUCT_WHEEL_OPT.RAW.DATA_STAGE/notebooks/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
     snow sql -q "
 USE ROLE SYSADMIN;
@@ -71,7 +76,7 @@ fi
 
 if should_run_step "streamlit"; then
     echo ""
-    echo "[5/5] Deploying Streamlit app..."
+    echo "[5/6] Deploying Streamlit app..."
     find "${PROJECT_DIR}/streamlit" -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
     rm -rf "${PROJECT_DIR}/streamlit/output" 2>/dev/null || true
 
