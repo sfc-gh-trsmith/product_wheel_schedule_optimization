@@ -1,0 +1,23 @@
+------------------------------------------------------------------------
+-- 04_notebook.sql
+-- Product Wheel Schedule Optimization - Notebook Deployment
+------------------------------------------------------------------------
+
+USE ROLE SYSADMIN;
+USE WAREHOUSE PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH;
+
+PUT file://notebooks/product_wheel_optimizer.ipynb
+    @PRODUCT_WHEEL_OPT.RAW.DATA_STAGE/notebooks/
+    AUTO_COMPRESS = FALSE
+    OVERWRITE = TRUE;
+
+CREATE OR REPLACE NOTEBOOK PRODUCT_WHEEL_OPT.RAW.PRODUCT_WHEEL_OPTIMIZER
+    FROM '@PRODUCT_WHEEL_OPT.RAW.DATA_STAGE/notebooks'
+    MAIN_FILE = 'product_wheel_optimizer.ipynb'
+    RUNTIME_NAME = 'SYSTEM$GPU_RUNTIME'
+    COMPUTE_POOL = 'PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_POOL'
+    QUERY_WAREHOUSE = PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH
+    EXTERNAL_ACCESS_INTEGRATIONS = (PWO_EXTERNAL_ACCESS)
+    IDLE_AUTO_SHUTDOWN_TIME_SECONDS = 1800;
+
+ALTER NOTEBOOK PRODUCT_WHEEL_OPT.RAW.PRODUCT_WHEEL_OPTIMIZER ADD LIVE VERSION FROM LAST;

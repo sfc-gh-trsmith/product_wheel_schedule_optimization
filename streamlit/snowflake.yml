@@ -1,0 +1,15 @@
+definition_version: 2
+entities:
+  product_wheel_app:
+    type: streamlit
+    identifier:
+      name: PRODUCT_WHEEL_APP
+    title: "Product Wheel Schedule Optimization"
+    query_warehouse: PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH
+    main_file: streamlit_app.py
+    pages_dir: pages/
+    artifacts:
+      - environment.yml
+      - utils/
+      - pages/
+      - PuLP-2.9.0-py3-none-any.whl

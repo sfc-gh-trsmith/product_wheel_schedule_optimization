@@ -1,0 +1,34 @@
+------------------------------------------------------------------------
+-- 03_gpu_infra.sql
+-- Product Wheel Schedule Optimization - GPU Compute Pool & Network Access
+------------------------------------------------------------------------
+
+USE ROLE SYSADMIN;
+
+GRANT CREATE COMPUTE POOL ON ACCOUNT TO ROLE SYSADMIN;
+
+CREATE COMPUTE POOL IF NOT EXISTS PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_POOL
+    MIN_NODES = 1
+    MAX_NODES = 1
+    INSTANCE_FAMILY = GPU_NV_S
+    AUTO_RESUME = TRUE
+    AUTO_SUSPEND_SECS = 3600;
+
+CREATE OR REPLACE NETWORK RULE PRODUCT_WHEEL_OPT.RAW.PYPI_EGRESS_RULE
+    MODE = EGRESS
+    TYPE = HOST_PORT
+    VALUE_LIST = (
+        'pypi.org:443',
+        'files.pythonhosted.org:443',
+        'pypi.nvidia.com:443'
+    );
+
+USE ROLE ACCOUNTADMIN;
+
+CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION PWO_EXTERNAL_ACCESS
+    ALLOWED_NETWORK_RULES = (PRODUCT_WHEEL_OPT.RAW.PYPI_EGRESS_RULE)
+    ENABLED = TRUE;
+
+GRANT USAGE ON INTEGRATION PWO_EXTERNAL_ACCESS TO ROLE SYSADMIN;
+
+USE ROLE SYSADMIN;

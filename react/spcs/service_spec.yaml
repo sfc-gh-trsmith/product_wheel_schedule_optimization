@@ -1,0 +1,21 @@
+spec:
+  containers:
+    - name: product-wheel-react
+      image: /PRODUCT_WHEEL_OPT/RAW/IMAGE_REPO/product-wheel-react:latest
+      env:
+        SNOWFLAKE_WAREHOUSE: PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH
+      readinessProbe:
+        port: 5172
+        path: /api/health
+      volumeMounts:
+        - name: token-vol
+          mountPath: /snowflake/session
+  endpoints:
+    - name: app
+      port: 5172
+      public: true
+  volumes:
+    - name: token-vol
+      source: "@PRODUCT_WHEEL_OPT.RAW.VOLUMES"
+      uid: 0
+      gid: 0
