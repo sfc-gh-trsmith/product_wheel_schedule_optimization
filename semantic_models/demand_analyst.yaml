@@ -1,0 +1,104 @@
+name: DEMAND_ANALYST
+description: >
+  Answers questions about customer demand forecasts, demand volumes, trends,
+  and demand distribution by customer, product family, and time period.
+  Use this when the user asks about demand, forecasts, customer orders, or
+  what customers are ordering.
+
+tables:
+  - name: DEMAND_FORECAST
+    description: >
+      Customer demand forecast data. Each row represents a weekly demand
+      quantity for a customer-product combination.
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: DEMAND_FORECAST
+    dimensions:
+      - name: CUSTOMER_NAME
+        description: Name of the customer company
+        expr: c.CUSTOMER_NAME
+        data_type: VARCHAR
+      - name: CUSTOMER_SEGMENT
+        description: Customer classification (Retail National, Premium Specialty, E-Commerce, Private Label)
+        expr: c.CUSTOMER_SEGMENT
+        data_type: VARCHAR
+      - name: PRODUCT_CODE
+        description: Product SKU code
+        expr: p.PRODUCT_CODE
+        data_type: VARCHAR
+      - name: PRODUCT_FAMILY
+        description: Product family grouping
+        expr: p.PRODUCT_FAMILY
+        data_type: VARCHAR
+      - name: FORECAST_WEEK_START
+        description: Start date of the forecast week
+        expr: df.FORECAST_WEEK_START
+        data_type: DATE
+    facts:
+      - name: FORECAST_QTY
+        description: Forecasted demand quantity in units for this week
+        expr: df.FORECAST_QTY
+        data_type: NUMBER
+    metrics:
+      - name: TOTAL_DEMAND
+        description: Total forecasted demand quantity
+        expr: SUM(df.FORECAST_QTY)
+        data_type: NUMBER
+      - name: AVG_WEEKLY_DEMAND
+        description: Average weekly demand quantity
+        expr: AVG(df.FORECAST_QTY)
+        data_type: FLOAT
+      - name: CUSTOMER_COUNT
+        description: Number of distinct customers
+        expr: COUNT(DISTINCT c.CUSTOMER_NAME)
+        data_type: NUMBER
+      - name: PRODUCT_COUNT
+        description: Number of distinct products with demand
+        expr: COUNT(DISTINCT p.PRODUCT_CODE)
+        data_type: NUMBER
+
+  - name: CUSTOMERS
+    description: Customer reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: CUSTOMERS
+
+  - name: PRODUCTS
+    description: Product reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PRODUCTS
+
+relationships:
+  - left_table: DEMAND_FORECAST
+    right_table: CUSTOMERS
+    join_type: inner
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+  - left_table: DEMAND_FORECAST
+    right_table: PRODUCTS
+    join_type: inner
+    relationship_columns:
+      - left_column: PRODUCT_ID
+        right_column: PRODUCT_ID
+
+verified_queries:
+  - question: What is the total demand by product family?
+    sql: >
+      SELECT p.PRODUCT_FAMILY, SUM(df.FORECAST_QTY) AS total_demand
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.DEMAND_FORECAST df
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTS p ON df.PRODUCT_ID = p.PRODUCT_ID
+      GROUP BY p.PRODUCT_FAMILY
+      ORDER BY total_demand DESC
+  - question: Which customer has the highest demand?
+    sql: >
+      SELECT c.CUSTOMER_NAME, SUM(df.FORECAST_QTY) AS total_demand
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.DEMAND_FORECAST df
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.CUSTOMERS c ON df.CUSTOMER_ID = c.CUSTOMER_ID
+      GROUP BY c.CUSTOMER_NAME
+      ORDER BY total_demand DESC
+      LIMIT 5

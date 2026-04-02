@@ -1,6 +1,7 @@
 import { useMemo, ReactNode } from 'react';
 import Plot from 'react-plotly.js';
 import { useChartLayout } from '../types/charts';
+import InfoTooltip from './InfoTooltip';
 
 interface ChartContainerProps {
   data: any[];
@@ -8,10 +9,11 @@ interface ChartContainerProps {
   height?: number;
   loading?: boolean;
   title?: string;
+  description?: string;
   children?: ReactNode;
 }
 
-export default function ChartContainer({ data, layout = {}, height = 350, loading, title }: ChartContainerProps) {
+export default function ChartContainer({ data, layout = {}, height = 350, loading, title, description }: ChartContainerProps) {
   const themeLayout = useChartLayout();
 
   const titleObj = title ? { text: title } : layout.title ? (typeof layout.title === 'string' ? { text: layout.title } : layout.title) : undefined;
@@ -35,6 +37,12 @@ export default function ChartContainer({ data, layout = {}, height = 350, loadin
 
   return (
     <div className="plotly-chart w-full">
+      {description && (
+        <div className="flex items-center gap-1 mb-1">
+          <InfoTooltip text={description} iconSize={12} />
+          <span className="text-[10px] text-gray-400 dark:text-dark-muted">Chart info</span>
+        </div>
+      )}
       <Plot
         data={data as any}
         layout={mergedLayout as any}

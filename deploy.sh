@@ -12,6 +12,7 @@ while [[ $# -gt 0 ]]; do
         --only-sql) ONLY_COMPONENT="sql"; shift ;;
         --only-streamlit) ONLY_COMPONENT="streamlit"; shift ;;
         --only-notebook) ONLY_COMPONENT="notebook"; shift ;;
+        --only-cortex) ONLY_COMPONENT="cortex"; shift ;;
         -c|--connection) HAS_CONNECTION=true; SNOW_ARGS+=("$1" "$2"); shift 2 ;;
         *) SNOW_ARGS+=("$1"); shift ;;
     esac
@@ -72,6 +73,38 @@ CREATE OR REPLACE NOTEBOOK PRODUCT_WHEEL_OPT.RAW.PRODUCT_WHEEL_OPTIMIZER
     IDLE_AUTO_SHUTDOWN_TIME_SECONDS = 1800;
 " "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
     snow sql -q "ALTER NOTEBOOK PRODUCT_WHEEL_OPT.RAW.PRODUCT_WHEEL_OPTIMIZER ADD LIVE VERSION FROM LAST;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+fi
+
+if should_run_step "sql" || should_run_step "cortex"; then
+    echo ""
+    echo "[4.5/6] Deploying Cortex services (search, semantic views, notes, agent)..."
+
+    echo "  Uploading process documents to stage..."
+    snow sql -q "USE ROLE SYSADMIN; USE WAREHOUSE PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH; USE DATABASE PRODUCT_WHEEL_OPT; USE SCHEMA RAW;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+    snow sql -q "CREATE STAGE IF NOT EXISTS PRODUCT_WHEEL_OPT.RAW.PROCESS_DOCS DIRECTORY = (ENABLE = TRUE) ENCRYPTION = (TYPE = 'SNOWFLAKE_SSE');" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+    for f in "${PROJECT_DIR}"/docs/process/*.md; do
+        [ -f "$f" ] && snow sql -q "PUT file://${f} @PRODUCT_WHEEL_OPT.RAW.PROCESS_DOCS/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+    done
+    snow sql -q "ALTER STAGE PRODUCT_WHEEL_OPT.RAW.PROCESS_DOCS REFRESH;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+
+    echo "  Setting up Cortex Search..."
+    snow sql -f "${PROJECT_DIR}/sql/06_cortex_search.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+    echo "  Running document chunker..."
+    snow sql -q "USE ROLE SYSADMIN; USE WAREHOUSE PRODUCT_WHEEL_SCHEDULE_OPTIMIZATION_WH; CALL PRODUCT_WHEEL_OPT.RAW.CHUNK_PROCESS_DOCS();" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}" || true
+
+    echo "  Uploading semantic models to stage..."
+    snow sql -q "CREATE STAGE IF NOT EXISTS PRODUCT_WHEEL_OPT.RAW.SEMANTIC_MODELS DIRECTORY = (ENABLE = TRUE) ENCRYPTION = (TYPE = 'SNOWFLAKE_SSE');" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+    for f in "${PROJECT_DIR}"/semantic_models/*.yaml; do
+        [ -f "$f" ] && snow sql -q "PUT file://${f} @PRODUCT_WHEEL_OPT.RAW.SEMANTIC_MODELS/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE;" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+    done
+    echo "  Creating semantic views..."
+    snow sql -f "${PROJECT_DIR}/sql/07_semantic_views.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}" || true
+
+    echo "  Creating notes table and UDF..."
+    snow sql -f "${PROJECT_DIR}/sql/08_notes.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}"
+
+    echo "  Creating Cortex Agent..."
+    snow sql -f "${PROJECT_DIR}/sql/09_cortex_agent.sql" "${SNOW_ARGS[@]+${SNOW_ARGS[@]}}" || true
 fi
 
 if should_run_step "streamlit"; then

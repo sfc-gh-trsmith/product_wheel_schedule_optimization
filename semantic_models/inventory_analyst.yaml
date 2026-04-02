@@ -1,0 +1,109 @@
+name: INVENTORY_ANALYST
+description: >
+  Answers questions about current inventory levels, safety stock positions,
+  days of supply, and inventory status by product and plant.
+  Use this when the user asks about stock levels, what's on hand, safety stock,
+  or inventory health.
+
+tables:
+  - name: INVENTORY_SNAPSHOT
+    description: >
+      Current inventory positions by product and plant. Shows on-hand quantity,
+      safety stock levels, and on-order quantities.
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: INVENTORY_SNAPSHOT
+    dimensions:
+      - name: PRODUCT_CODE
+        description: Product SKU code
+        expr: p.PRODUCT_CODE
+        data_type: VARCHAR
+      - name: PRODUCT_FAMILY
+        description: Product family grouping
+        expr: p.PRODUCT_FAMILY
+        data_type: VARCHAR
+      - name: PLANT_NAME
+        description: Plant where inventory is held
+        expr: pl.PLANT_NAME
+        data_type: VARCHAR
+      - name: SNAPSHOT_DATE
+        description: Date of the inventory snapshot
+        expr: inv.SNAPSHOT_DATE
+        data_type: DATE
+    facts:
+      - name: ON_HAND_QTY
+        description: Current on-hand inventory quantity
+        expr: inv.ON_HAND_QTY
+        data_type: NUMBER
+      - name: SAFETY_STOCK_QTY
+        description: Minimum safety stock level
+        expr: inv.SAFETY_STOCK_QTY
+        data_type: NUMBER
+      - name: ON_ORDER_QTY
+        description: Quantity on order (in production or in transit)
+        expr: inv.ON_ORDER_QTY
+        data_type: NUMBER
+    metrics:
+      - name: TOTAL_ON_HAND
+        description: Total on-hand inventory across all products
+        expr: SUM(inv.ON_HAND_QTY)
+        data_type: NUMBER
+      - name: TOTAL_SAFETY_STOCK
+        description: Total safety stock requirement
+        expr: SUM(inv.SAFETY_STOCK_QTY)
+        data_type: NUMBER
+      - name: PRODUCTS_BELOW_SAFETY
+        description: Count of products where on-hand is below safety stock
+        expr: COUNT(CASE WHEN inv.ON_HAND_QTY < inv.SAFETY_STOCK_QTY THEN 1 END)
+        data_type: NUMBER
+      - name: AVG_STOCK_COVERAGE_RATIO
+        description: Average ratio of on-hand to safety stock
+        expr: AVG(CASE WHEN inv.SAFETY_STOCK_QTY > 0 THEN inv.ON_HAND_QTY / inv.SAFETY_STOCK_QTY END)
+        data_type: FLOAT
+
+  - name: PRODUCTS
+    description: Product reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PRODUCTS
+
+  - name: PLANTS
+    description: Plant reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PLANTS
+
+relationships:
+  - left_table: INVENTORY_SNAPSHOT
+    right_table: PRODUCTS
+    join_type: inner
+    relationship_columns:
+      - left_column: PRODUCT_ID
+        right_column: PRODUCT_ID
+  - left_table: INVENTORY_SNAPSHOT
+    right_table: PLANTS
+    join_type: inner
+    relationship_columns:
+      - left_column: PLANT_ID
+        right_column: PLANT_ID
+
+verified_queries:
+  - question: Which products are below safety stock?
+    sql: >
+      SELECT p.PRODUCT_CODE, p.PRODUCT_FAMILY, pl.PLANT_NAME,
+             inv.ON_HAND_QTY, inv.SAFETY_STOCK_QTY
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.INVENTORY_SNAPSHOT inv
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTS p ON inv.PRODUCT_ID = p.PRODUCT_ID
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PLANTS pl ON inv.PLANT_ID = pl.PLANT_ID
+      WHERE inv.ON_HAND_QTY < inv.SAFETY_STOCK_QTY
+      ORDER BY (inv.SAFETY_STOCK_QTY - inv.ON_HAND_QTY) DESC
+  - question: What is total inventory by product family?
+    sql: >
+      SELECT p.PRODUCT_FAMILY, SUM(inv.ON_HAND_QTY) AS total_on_hand
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.INVENTORY_SNAPSHOT inv
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTS p ON inv.PRODUCT_ID = p.PRODUCT_ID
+      GROUP BY p.PRODUCT_FAMILY
+      ORDER BY total_on_hand DESC

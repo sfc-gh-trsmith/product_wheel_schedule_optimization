@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ThemeToggle from './ThemeToggle';
+import CortexChatWidget from './CortexChatWidget';
 
 export default function Layout() {
   return (
@@ -17,6 +18,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <CortexChatWidget />
     </div>
   );
 }

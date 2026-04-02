@@ -5,6 +5,8 @@ import ChartContainer from '../components/ChartContainer';
 import DataTable from '../components/DataTable';
 import KPICard from '../components/KPICard';
 import StatusBadge from '../components/StatusBadge';
+import GuidanceBanner from '../components/GuidanceBanner';
+import NotesPanel from '../components/NotesPanel';
 import { useChartLayout } from '../types/charts';
 import type { ContractCompliance, Contract, ContractItem } from '../types';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -62,11 +64,29 @@ export default function ContractMonitor() {
         <p className="text-sm text-gray-500 dark:text-dark-muted">Track contract SLA compliance against the optimized schedule</p>
       </div>
 
+      <GuidanceBanner
+        title="SLA Compliance Dashboard"
+        description="Compare the optimized schedule's fill rate against each customer's contractual SLA target. Green = on track, amber = at risk, red = breach."
+        details="Gap = Achieved fill rate minus SLA target. Negative gaps require corrective action — either re-run the optimizer with higher backorder penalties or add capacity. The dumbbell chart (Fill Rate vs. SLA Target) visually highlights the magnitude of each gap. Volume Coverage shows how much of each customer's demand is covered by production."
+      />
+
       {metrics && (
         <div className="grid grid-cols-3 gap-4">
-          <KPICard label="Contracts On-Track" value={String(metrics.onTrack)} />
-          <KPICard label="At-Risk / Breach" value={String(metrics.atRisk + metrics.breach)} />
-          <KPICard label="Avg Fill Rate Gap" value={`${metrics.avgGap >= 0 ? '+' : ''}${(metrics.avgGap * 100).toFixed(1)}%`} />
+          <KPICard
+            label="Contracts On-Track"
+            value={String(metrics.onTrack)}
+            tooltip="Contracts where the optimized schedule meets or exceeds the SLA fill rate target."
+          />
+          <KPICard
+            label="At-Risk / Breach"
+            value={String(metrics.atRisk + metrics.breach)}
+            tooltip="Contracts where the fill rate is below the SLA target. At-Risk: within 5% of SLA. Breach: more than 5% below."
+          />
+          <KPICard
+            label="Avg Fill Rate Gap"
+            value={`${metrics.avgGap >= 0 ? '+' : ''}${(metrics.avgGap * 100).toFixed(1)}%`}
+            tooltip="Average difference between achieved fill rate and SLA target across all contracts. Positive = comfortable buffer."
+          />
         </div>
       )}
 
@@ -80,6 +100,7 @@ export default function ContractMonitor() {
           <h3 className="text-sm font-semibold mb-2">Fill Rate vs. SLA Target</h3>
           <ChartContainer
             height={400}
+            description="Dumbbell chart showing the gap between SLA target (gray) and achieved fill rate (blue). Green lines = above SLA. Red lines = below SLA."
             data={(() => {
               if (!compliance?.length) return [];
               const traces: any[] = [];
@@ -119,6 +140,7 @@ export default function ContractMonitor() {
           <h3 className="text-sm font-semibold mb-2">Contract Volume Coverage</h3>
           <ChartContainer
             height={400}
+            description="Stacked bar showing covered (blue) vs. gap (red) volume for each customer. Red bars represent unmet demand that may trigger SLA penalties."
             data={
               compliance?.length
                 ? [
@@ -172,6 +194,8 @@ export default function ContractMonitor() {
           })}
         </div>
       </div>
+
+      <NotesPanel page="contracts" />
     </div>
   );
 }

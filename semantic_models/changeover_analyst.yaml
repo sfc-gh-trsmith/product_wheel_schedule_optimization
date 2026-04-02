@@ -1,0 +1,143 @@
+name: CHANGEOVER_ANALYST
+description: >
+  Answers questions about changeover times and costs between products on
+  production lines. Use this when the user asks about changeover matrices,
+  transition times, cleaning requirements, or the cost of switching between
+  products.
+
+tables:
+  - name: CHANGEOVER_MATRIX
+    description: >
+      Product-to-product changeover times for each production line. Each row
+      represents the time and cost to switch from one product to another on
+      a specific line.
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: CHANGEOVER_MATRIX
+    dimensions:
+      - name: LINE_CODE
+        description: Production line code
+        expr: l.LINE_CODE
+        data_type: VARCHAR
+      - name: PLANT_NAME
+        description: Plant name where the line is located
+        expr: pl.PLANT_NAME
+        data_type: VARCHAR
+      - name: FROM_PRODUCT
+        description: Product being switched from
+        expr: p_from.PRODUCT_CODE
+        data_type: VARCHAR
+      - name: FROM_FAMILY
+        description: Product family being switched from
+        expr: p_from.PRODUCT_FAMILY
+        data_type: VARCHAR
+      - name: TO_PRODUCT
+        description: Product being switched to
+        expr: p_to.PRODUCT_CODE
+        data_type: VARCHAR
+      - name: TO_FAMILY
+        description: Product family being switched to
+        expr: p_to.PRODUCT_FAMILY
+        data_type: VARCHAR
+    facts:
+      - name: CHANGEOVER_TIME_HOURS
+        description: Time in hours to complete the changeover
+        expr: cm.CHANGEOVER_TIME_HOURS
+        data_type: FLOAT
+      - name: CHANGEOVER_COST
+        description: Cost in dollars for this changeover
+        expr: cm.CHANGEOVER_COST
+        data_type: FLOAT
+    metrics:
+      - name: AVG_CHANGEOVER_TIME
+        description: Average changeover time in hours
+        expr: AVG(cm.CHANGEOVER_TIME_HOURS)
+        data_type: FLOAT
+      - name: MAX_CHANGEOVER_TIME
+        description: Maximum changeover time in hours
+        expr: MAX(cm.CHANGEOVER_TIME_HOURS)
+        data_type: FLOAT
+      - name: TOTAL_CHANGEOVER_COST
+        description: Total changeover cost
+        expr: SUM(cm.CHANGEOVER_COST)
+        data_type: FLOAT
+      - name: TRANSITION_COUNT
+        description: Number of product transitions defined
+        expr: COUNT(*)
+        data_type: NUMBER
+
+  - name: PRODUCTION_LINES
+    description: Production line reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PRODUCTION_LINES
+
+  - name: PLANTS
+    description: Plant reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PLANTS
+
+  - name: PRODUCTS_FROM
+    description: Product reference for the from-product
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PRODUCTS
+
+  - name: PRODUCTS_TO
+    description: Product reference for the to-product
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PRODUCTS
+
+relationships:
+  - left_table: CHANGEOVER_MATRIX
+    right_table: PRODUCTION_LINES
+    join_type: inner
+    relationship_columns:
+      - left_column: LINE_ID
+        right_column: LINE_ID
+  - left_table: PRODUCTION_LINES
+    right_table: PLANTS
+    join_type: inner
+    relationship_columns:
+      - left_column: PLANT_ID
+        right_column: PLANT_ID
+  - left_table: CHANGEOVER_MATRIX
+    right_table: PRODUCTS_FROM
+    join_type: inner
+    relationship_columns:
+      - left_column: FROM_PRODUCT_ID
+        right_column: PRODUCT_ID
+  - left_table: CHANGEOVER_MATRIX
+    right_table: PRODUCTS_TO
+    join_type: inner
+    relationship_columns:
+      - left_column: TO_PRODUCT_ID
+        right_column: PRODUCT_ID
+
+verified_queries:
+  - question: What is the average changeover time by line?
+    sql: >
+      SELECT l.LINE_CODE, AVG(cm.CHANGEOVER_TIME_HOURS) AS avg_co_hrs
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.CHANGEOVER_MATRIX cm
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTION_LINES l ON cm.LINE_ID = l.LINE_ID
+      GROUP BY l.LINE_CODE
+      ORDER BY avg_co_hrs DESC
+  - question: What are the most expensive changeovers?
+    sql: >
+      SELECT p_from.PRODUCT_CODE AS from_product,
+             p_to.PRODUCT_CODE AS to_product,
+             l.LINE_CODE,
+             cm.CHANGEOVER_TIME_HOURS
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.CHANGEOVER_MATRIX cm
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTION_LINES l ON cm.LINE_ID = l.LINE_ID
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTS p_from ON cm.FROM_PRODUCT_ID = p_from.PRODUCT_ID
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTS p_to ON cm.TO_PRODUCT_ID = p_to.PRODUCT_ID
+      ORDER BY cm.CHANGEOVER_TIME_HOURS DESC
+      LIMIT 10

@@ -1,0 +1,140 @@
+name: CONTRACT_ANALYST
+description: >
+  Answers questions about customer contracts, SLA targets, fill rate compliance,
+  contract items, pricing, and priority tiers. Use this when the user asks about
+  contracts, SLAs, compliance, customer agreements, or which customers are at risk.
+
+tables:
+  - name: CONTRACTS
+    description: >
+      Customer contract agreements with SLA targets and terms.
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: CONTRACTS
+    dimensions:
+      - name: CUSTOMER_NAME
+        description: Customer company name
+        expr: cust.CUSTOMER_NAME
+        data_type: VARCHAR
+      - name: CUSTOMER_SEGMENT
+        description: Customer segment classification
+        expr: cust.CUSTOMER_SEGMENT
+        data_type: VARCHAR
+      - name: CONTRACT_START_DATE
+        description: Contract effective start date
+        expr: con.CONTRACT_START_DATE
+        data_type: DATE
+      - name: CONTRACT_END_DATE
+        description: Contract end date
+        expr: con.CONTRACT_END_DATE
+        data_type: DATE
+    facts:
+      - name: SERVICE_LEVEL_TARGET_FILL_RATE
+        description: Contractual SLA fill rate target (0-1)
+        expr: con.SERVICE_LEVEL_TARGET_FILL_RATE
+        data_type: FLOAT
+      - name: MAX_DAYS_OF_SUPPLY_TARGET
+        description: Maximum allowed days of supply per the contract
+        expr: con.MAX_DAYS_OF_SUPPLY_TARGET
+        data_type: NUMBER
+    metrics:
+      - name: CONTRACT_COUNT
+        description: Number of active contracts
+        expr: COUNT(DISTINCT con.CONTRACT_ID)
+        data_type: NUMBER
+      - name: AVG_SLA_TARGET
+        description: Average SLA fill rate target
+        expr: AVG(con.SERVICE_LEVEL_TARGET_FILL_RATE)
+        data_type: FLOAT
+
+  - name: CONTRACT_ITEMS
+    description: >
+      Individual product items within each contract with volume commitments and pricing.
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: CONTRACT_ITEMS
+    dimensions:
+      - name: PRODUCT_CODE
+        description: Product SKU code
+        expr: p.PRODUCT_CODE
+        data_type: VARCHAR
+      - name: PRODUCT_FAMILY
+        description: Product family grouping
+        expr: p.PRODUCT_FAMILY
+        data_type: VARCHAR
+      - name: PRIORITY_TIER
+        description: Customer priority tier (Platinum, Gold, Silver)
+        expr: ci.PRIORITY_TIER
+        data_type: VARCHAR
+    facts:
+      - name: MIN_ANNUAL_VOLUME
+        description: Minimum annual volume commitment
+        expr: ci.MIN_ANNUAL_VOLUME
+        data_type: NUMBER
+      - name: MAX_ANNUAL_VOLUME
+        description: Maximum annual volume capacity
+        expr: ci.MAX_ANNUAL_VOLUME
+        data_type: NUMBER
+      - name: AGREED_PRICE_PER_UNIT
+        description: Agreed unit price
+        expr: ci.AGREED_PRICE_PER_UNIT
+        data_type: FLOAT
+    metrics:
+      - name: TOTAL_MIN_VOLUME
+        description: Total minimum volume commitment
+        expr: SUM(ci.MIN_ANNUAL_VOLUME)
+        data_type: NUMBER
+      - name: TOTAL_CONTRACT_VALUE
+        description: Total minimum contract value (min vol × price)
+        expr: SUM(ci.MIN_ANNUAL_VOLUME * ci.AGREED_PRICE_PER_UNIT)
+        data_type: FLOAT
+
+  - name: CUSTOMERS
+    description: Customer reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: CUSTOMERS
+
+  - name: PRODUCTS
+    description: Product reference data
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: ATOMIC
+      table: PRODUCTS
+
+relationships:
+  - left_table: CONTRACTS
+    right_table: CUSTOMERS
+    join_type: inner
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+  - left_table: CONTRACT_ITEMS
+    right_table: CONTRACTS
+    join_type: inner
+    relationship_columns:
+      - left_column: CONTRACT_ID
+        right_column: CONTRACT_ID
+  - left_table: CONTRACT_ITEMS
+    right_table: PRODUCTS
+    join_type: inner
+    relationship_columns:
+      - left_column: PRODUCT_ID
+        right_column: PRODUCT_ID
+
+verified_queries:
+  - question: What is the SLA target for each customer?
+    sql: >
+      SELECT cust.CUSTOMER_NAME, con.SERVICE_LEVEL_TARGET_FILL_RATE AS sla_target
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.CONTRACTS con
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.CUSTOMERS cust ON con.CUSTOMER_ID = cust.CUSTOMER_ID
+      ORDER BY sla_target DESC
+  - question: Which products have Platinum priority tier?
+    sql: >
+      SELECT DISTINCT p.PRODUCT_CODE, p.PRODUCT_FAMILY, ci.PRIORITY_TIER
+      FROM PRODUCT_WHEEL_OPT.ATOMIC.CONTRACT_ITEMS ci
+      JOIN PRODUCT_WHEEL_OPT.ATOMIC.PRODUCTS p ON ci.PRODUCT_ID = p.PRODUCT_ID
+      WHERE ci.PRIORITY_TIER = 'Platinum'

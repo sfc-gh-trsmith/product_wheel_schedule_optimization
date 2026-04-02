@@ -4,6 +4,7 @@ import { useURLState } from '../hooks/useURLState';
 import ChartContainer from '../components/ChartContainer';
 import DataTable from '../components/DataTable';
 import KPICard from '../components/KPICard';
+import GuidanceBanner from '../components/GuidanceBanner';
 import { SNOWFLAKE_COLORS, useChartLayout } from '../types/charts';
 import { clsx } from 'clsx';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -12,8 +13,37 @@ import type { DemandLandscape, DemandTimeseries, LineCapability, ThroughputDetai
 const TABS = ['demand', 'lines', 'changeover', 'inventory', 'contracts'] as const;
 const TAB_LABELS = ['Demand Landscape', 'Line Capabilities', 'Changeover Matrix', 'Inventory Snapshot', 'Contracts & SLAs'];
 
+const TAB_GUIDANCE: Record<string, { title: string; description: string; details: string }> = {
+  demand: {
+    title: 'Demand Forecast Data',
+    description: 'Customer demand forecasts that drive the production schedule. The optimizer uses this data to determine what and how much to produce.',
+    details: 'Demand is aggregated by customer × product family. The heatmap reveals concentration patterns — bright cells indicate high-volume relationships that should be prioritized. The time series shows weekly demand variability that the scheduler must buffer against.',
+  },
+  lines: {
+    title: 'Production Line Capabilities',
+    description: 'Each line has different throughput rates, product qualifications, and allergen constraints that determine what it can produce.',
+    details: 'Run rate ranges show production speed variability by product. Lines with narrow ranges are specialized; wide ranges indicate flexible lines. Allergen-dedicated lines can only run specific product families to avoid cross-contamination.',
+  },
+  changeover: {
+    title: 'Changeover Times & Costs',
+    description: 'The time required to clean, setup, and validate a production line when switching between products. This is the key cost the product wheel minimizes.',
+    details: 'The matrix shows from→to changeover times. Product wheel scheduling sequences products to minimize total changeover time by grouping similar products together. Expensive changeovers (dark red) should be avoided in sequence.',
+  },
+  inventory: {
+    title: 'Current Inventory Positions',
+    description: 'Opening inventory levels that the optimizer uses as starting positions. Products with inventory below safety stock get production priority.',
+    details: 'The scatter plot of On-Hand vs Safety Stock highlights items below the diagonal — these are below safety stock and need urgent production. Items well above the line may be over-stocked.',
+  },
+  contracts: {
+    title: 'Customer Contracts & SLAs',
+    description: 'Contractual commitments that define minimum volumes, service levels, and pricing for each customer-product combination.',
+    details: 'SLA targets drive the optimizer\'s fill rate constraint. Priority tiers (Platinum/Gold/Silver) determine which customers get production preference when capacity is constrained. Max Days of Supply targets cap inventory buildup.',
+  },
+};
+
 export default function DataExplorer() {
   const [tab, setTab] = useURLState('tab', 'demand');
+  const guidance = TAB_GUIDANCE[tab] || TAB_GUIDANCE.demand;
 
   return (
     <div className="space-y-4">
@@ -21,6 +51,7 @@ export default function DataExplorer() {
         <h1 className="text-2xl font-bold">Data Explorer</h1>
         <p className="text-sm text-gray-500 dark:text-dark-muted">Explore the source data that feeds the product wheel optimizer</p>
       </div>
+      <GuidanceBanner title={guidance.title} description={guidance.description} details={guidance.details} />
       <div className="flex gap-1 border-b border-gray-200 dark:border-dark-border">
         {TABS.map((t, i) => (
           <button
@@ -56,14 +87,15 @@ function DemandTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
-        <KPICard label="Total Demand Volume" value={totalVol.toLocaleString()} />
-        <KPICard label="Customer-Family Combos" value={String(combos)} />
-        <KPICard label="Forecast Weeks" value={String(weeks)} />
+        <KPICard label="Total Demand Volume" value={totalVol.toLocaleString()} tooltip="Sum of all forecasted demand units across customers, products, and time periods." />
+        <KPICard label="Customer-Family Combos" value={String(combos)} tooltip="Number of unique customer × product family pairings with active demand." />
+        <KPICard label="Forecast Weeks" value={String(weeks)} tooltip="Number of weekly periods in the demand forecast horizon." />
       </div>
       <ChartContainer
         loading={dlLoad}
         height={400}
         title="Customer x Product Family Demand"
+        description="Heatmap of demand volume by customer and product family. Bright cells = high volume. This shows where demand is concentrated."
         data={(() => {
           if (!dl?.length) return [];
           const customers = [...new Set(dl.map((r) => r.customer_name))];
@@ -77,6 +109,7 @@ function DemandTab() {
           loading={tsLoad}
           height={350}
           title="Weekly Demand by Product Family"
+          description="Stacked area chart showing weekly demand by product family. Use this to spot demand spikes or seasonal patterns."
           data={(() => {
             const families = [...new Set(ts!.map((r) => r.product_family))];
             return families.map((f, i) => {
@@ -115,6 +148,7 @@ function LinesTab() {
         <ChartContainer
           title="Run Rate Distribution by Line"
           height={350}
+          description="Box plots showing the range of production run rates across products for each line. Wide boxes indicate versatile lines; narrow boxes suggest specialized capacity."
           data={(() => {
             const codes = [...new Set(tp!.map((r) => r.line_code))];
             return codes.map((lc, i) => ({
@@ -130,6 +164,7 @@ function LinesTab() {
         <ChartContainer
           title="Calendar Availability"
           height={300}
+          description="Green cells = line available, yellow = partial, red = unavailable (maintenance/holiday). The optimizer respects this calendar when assigning production."
           data={(() => {
             const lines = [...new Set(cal!.map((r) => r.line_code))];
             const dates = [...new Set(cal!.map((r) => r.slot_date))].sort();
@@ -172,13 +207,14 @@ function ChangeoverTab() {
       {co?.length ? (
         <>
           <div className="grid grid-cols-3 gap-4">
-            <KPICard label="Avg Changeover (hrs)" value={(co.reduce((s, r) => s + r.changeover_time_hours, 0) / co.length).toFixed(2)} />
-            <KPICard label="Min" value={Math.min(...co.map((r) => r.changeover_time_hours)).toFixed(2)} />
-            <KPICard label="Max" value={Math.max(...co.map((r) => r.changeover_time_hours)).toFixed(2)} />
+            <KPICard label="Avg Changeover (hrs)" value={(co.reduce((s, r) => s + r.changeover_time_hours, 0) / co.length).toFixed(2)} tooltip="Mean time to switch between any two products on this line." />
+            <KPICard label="Min" value={Math.min(...co.map((r) => r.changeover_time_hours)).toFixed(2)} tooltip="Fastest changeover — usually between similar products in the same family." />
+            <KPICard label="Max" value={Math.max(...co.map((r) => r.changeover_time_hours)).toFixed(2)} tooltip="Longest changeover — often cross-family switches requiring full CIP cleaning." />
           </div>
           <ChartContainer
             title="Changeover Time (Hours)"
             height={450}
+            description="From→To changeover matrix. Dark red = expensive transitions. The product wheel algorithm sequences production to avoid the darkest cells."
             data={(() => {
               const froms = [...new Set(co.map((r) => r.from_product))];
               const tos = [...new Set(co.map((r) => r.to_product))];
@@ -189,6 +225,7 @@ function ChangeoverTab() {
           <ChartContainer
             title="Top 10 Most Expensive Changeovers"
             height={350}
+            description="The costliest product transitions to avoid. If these appear frequently in the schedule, consider re-sequencing or dedicating a line."
             data={(() => {
               const sorted = [...co].sort((a, b) => b.changeover_time_hours - a.changeover_time_hours).slice(0, 10);
               return [{
@@ -266,13 +303,20 @@ function InventoryTab() {
   return (
     <div className="space-y-4">
       {aggData.stacked.length > 0 && (
-        <ChartContainer title="On-Hand Inventory by Product Family & Plant" height={350} data={aggData.stacked} layout={{ barmode: 'stack' }} />
+        <ChartContainer
+          title="On-Hand Inventory by Product Family & Plant"
+          height={350}
+          description="Stacked bars show inventory distribution across plants for each product family. Helps identify imbalanced stock across facilities."
+          data={aggData.stacked}
+          layout={{ barmode: 'stack' }}
+        />
       )}
       {inv && <DataTable data={inv} columns={columns} maxHeight={300} />}
       {aggData.scatter.length > 0 && (
         <ChartContainer
           title="On-Hand vs. Safety Stock"
           height={400}
+          description="Products below the diagonal line are under safety stock — production priority needed. Products far above may be over-stocked."
           data={aggData.scatter}
           layout={{
             xaxis: { title: 'Safety Stock' },
@@ -319,9 +363,9 @@ function ContractsTab() {
       {contracts?.length && (
         <>
           <div className="grid grid-cols-3 gap-4">
-            <KPICard label="Active Contracts" value={String(contracts.length)} />
-            <KPICard label="Avg SLA Target" value={`${((contracts.reduce((s, c) => s + c.service_level_target_fill_rate, 0) / contracts.length) * 100).toFixed(1)}%`} />
-            <KPICard label="DoS Target Range" value={`${Math.min(...contracts.map((c) => c.max_days_of_supply_target || 0))} - ${Math.max(...contracts.map((c) => c.max_days_of_supply_target || 0))} days`} />
+            <KPICard label="Active Contracts" value={String(contracts.length)} tooltip="Total number of active customer contracts currently in effect." />
+            <KPICard label="Avg SLA Target" value={`${((contracts.reduce((s, c) => s + c.service_level_target_fill_rate, 0) / contracts.length) * 100).toFixed(1)}%`} tooltip="Weighted average service level agreement fill rate target across all contracts." />
+            <KPICard label="DoS Target Range" value={`${Math.min(...contracts.map((c) => c.max_days_of_supply_target || 0))} - ${Math.max(...contracts.map((c) => c.max_days_of_supply_target || 0))} days`} tooltip="Range of max Days of Supply targets across contracts. The optimizer caps inventory buildup per these limits." />
           </div>
           <DataTable
             data={contracts}
@@ -336,6 +380,7 @@ function ContractsTab() {
           <ChartContainer
             title="Total Min Annual Volume by Customer"
             height={350}
+            description="Minimum contractual volume commitments by customer. Larger bars represent higher-stakes contracts."
             data={[{
               type: 'bar' as const,
               x: contracts.map((c) => c.customer_name),

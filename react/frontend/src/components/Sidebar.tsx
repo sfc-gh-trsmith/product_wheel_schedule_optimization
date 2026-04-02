@@ -12,6 +12,7 @@ import { useSnowflakeQuery } from '../hooks/useSnowflakeQuery';
 import { useScenarioStore } from '../stores/scenarioStore';
 import type { Scenario, Plant, Line } from '../types';
 import { useEffect } from 'react';
+import { ActivityFeed } from './NotesPanel';
 
 const NAV_ITEMS = [
   { to: '/overview', label: 'Executive Overview', icon: LayoutDashboard },
@@ -106,6 +107,10 @@ export default function Sidebar() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="p-4 border-t border-gray-200 dark:border-dark-border">
+        <ActivityFeed />
       </div>
     </aside>
   );

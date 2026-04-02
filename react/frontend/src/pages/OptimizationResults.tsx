@@ -5,6 +5,8 @@ import { useURLState } from '../hooks/useURLState';
 import ChartContainer from '../components/ChartContainer';
 import DataTable from '../components/DataTable';
 import KPICard from '../components/KPICard';
+import GuidanceBanner from '../components/GuidanceBanner';
+import NotesPanel from '../components/NotesPanel';
 import { SNOWFLAKE_COLORS, FAMILY_COLORS, useChartLayout } from '../types/charts';
 import type { ScheduleRow, KPI, ScenarioParams } from '../types';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -153,6 +155,13 @@ export default function OptimizationResults() {
         </select>
       </div>
 
+      <GuidanceBanner
+        title="Reading the Optimized Schedule"
+        description="The Gantt chart below shows the product wheel sequence for each line. Color = product family. Hover for details. Use the line filter to focus on a specific line."
+        details="The optimizer assigns products to time slots minimizing total cost (changeover + inventory holding + backorder penalties). Each bar is a production run. Gaps between bars may indicate changeover time. The waterfall chart shows overall demand fulfillment. Use the KPI table to compare line-level performance."
+        variant="tip"
+      />
+
       {params && (
         <div className="rounded-lg bg-dark-surface/50 dark:bg-dark-surface p-3 text-sm">
           <strong>Scenario:</strong> {scenario} &nbsp;|&nbsp;
@@ -167,6 +176,7 @@ export default function OptimizationResults() {
         <ChartContainer
           loading={schedLoading}
           height={Math.max(350, (new Set(schedule?.map((r) => r.line_code) ?? [])).size * 60 + 100)}
+          description="Horizontal bars represent production runs on each line. Color indicates product family. The wheel sequence minimizes changeover time between consecutive products."
           data={ganttData}
           layout={{
             barmode: 'stack',
@@ -181,6 +191,7 @@ export default function OptimizationResults() {
           <h3 className="text-sm font-semibold mb-2">Production Quantity by Product</h3>
           <ChartContainer
             height={450}
+            description="Top 20 products by planned production volume. Colors match product family. This shows where the optimizer allocates capacity."
             data={prodQty.length ? [{
               type: 'bar' as const,
               y: prodQty.map((r) => r.code),
@@ -198,6 +209,7 @@ export default function OptimizationResults() {
           </select>
           <ChartContainer
             height={450}
+            description="Projected inventory level over time for the selected product family. Rising = production outpacing demand; falling = demand drawdown. Dips near zero signal potential stockout."
             data={invTraj.length ? [{
               type: 'scatter' as const,
               x: invTraj.map(([ts]) => ts),
@@ -220,6 +232,7 @@ export default function OptimizationResults() {
           <h3 className="text-sm font-semibold mb-2">Changeover Event Timeline</h3>
           <ChartContainer
             height={350}
+            description="Bubble chart of changeover events. Larger bubbles = longer changeover time. Clusters indicate periods of frequent product switches."
             data={coEvents.length ? (() => {
               const codes = [...new Set(coEvents.map((r) => r.line_code))];
               return codes.map((lc, i) => {
@@ -245,6 +258,7 @@ export default function OptimizationResults() {
           <h3 className="text-sm font-semibold mb-2">Demand Fulfillment Waterfall</h3>
           <ChartContainer
             height={350}
+            description="Waterfall showing how total demand is fulfilled. Green = production exceeds demand (surplus); red = shortfall. The total bar shows net planned production."
             data={[{
               type: 'waterfall' as const,
               x: ['Total Demand', 'Production', 'Surplus/Shortfall'],
@@ -259,6 +273,8 @@ export default function OptimizationResults() {
           />
         </div>
       )}
+
+      <NotesPanel page="results" entityType="scenario" entityId={scenario} />
     </div>
   );
 }

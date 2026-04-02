@@ -1,0 +1,111 @@
+name: SCHEDULE_ANALYST
+description: >
+  Answers questions about the optimized production schedule, product wheel Gantt
+  charts, production quantities, line assignments, and schedule utilization.
+  Use this tool when the user asks about what is being produced, when, on which
+  line, or how much is planned. Also use for schedule-related KPIs like fill rate
+  and objective cost at the schedule level.
+
+tables:
+  - name: SCHEDULE_OUTPUT
+    description: >
+      The optimized production schedule output. Each row is a production run
+      assigning a product to a line in a time slot with planned quantity.
+    base_table:
+      database: PRODUCT_WHEEL_OPT
+      schema: DATA_MART
+      table: SCHEDULE_OUTPUT
+    dimensions:
+      - name: SCENARIO_ID
+        description: Unique scenario identifier for this optimization run
+        expr: SCENARIO_ID
+        data_type: VARCHAR
+      - name: LINE_CODE
+        description: Production line code (e.g. A1, B2, C1)
+        expr: LINE_CODE
+        data_type: VARCHAR
+      - name: PLANT_NAME
+        description: Manufacturing plant name
+        expr: PLANT_NAME
+        data_type: VARCHAR
+      - name: PRODUCT_CODE
+        description: Product SKU code
+        expr: PRODUCT_CODE
+        data_type: VARCHAR
+      - name: PRODUCT_FAMILY
+        description: Product family grouping (Premium Wet Food, Dry Kibble, etc.)
+        expr: PRODUCT_FAMILY
+        data_type: VARCHAR
+      - name: PRODUCT_DESCRIPTION
+        description: Human-readable product name
+        expr: PRODUCT_DESCRIPTION
+        data_type: VARCHAR
+      - name: TIME_SLOT_START
+        description: Start timestamp of the production time slot
+        expr: TIME_SLOT_START
+        data_type: TIMESTAMP_NTZ
+      - name: TIME_SLOT_END
+        description: End timestamp of the production time slot
+        expr: TIME_SLOT_END
+        data_type: TIMESTAMP_NTZ
+    facts:
+      - name: PLANNED_QTY
+        description: Quantity of units planned for production in this slot
+        expr: PLANNED_QTY
+        data_type: NUMBER
+      - name: PROJECTED_FILL_RATE
+        description: Fill rate for this product after this production run (0-1)
+        expr: PROJECTED_FILL_RATE
+        data_type: FLOAT
+      - name: PROJECTED_INVENTORY_QTY
+        description: Projected inventory level after this production run
+        expr: PROJECTED_INVENTORY_QTY
+        data_type: NUMBER
+      - name: TOTAL_CHANGEOVER_TIME_HOURS
+        description: Changeover time in hours to switch to this product
+        expr: TOTAL_CHANGEOVER_TIME_HOURS
+        data_type: FLOAT
+      - name: OBJECTIVE_COST
+        description: Weighted cost contribution of this slot (inventory + backorder + changeover)
+        expr: OBJECTIVE_COST
+        data_type: FLOAT
+    metrics:
+      - name: TOTAL_PLANNED_QTY
+        description: Total planned production quantity
+        expr: SUM(PLANNED_QTY)
+        data_type: NUMBER
+      - name: AVG_FILL_RATE
+        description: Average projected fill rate across all products
+        expr: AVG(PROJECTED_FILL_RATE)
+        data_type: FLOAT
+      - name: TOTAL_CHANGEOVER_HOURS
+        description: Total changeover hours in the schedule
+        expr: SUM(TOTAL_CHANGEOVER_TIME_HOURS)
+        data_type: FLOAT
+      - name: TOTAL_OBJECTIVE_COST
+        description: Total weighted objective cost
+        expr: SUM(OBJECTIVE_COST)
+        data_type: FLOAT
+      - name: DISTINCT_PRODUCTS_SCHEDULED
+        description: Number of unique products in the schedule
+        expr: COUNT(DISTINCT PRODUCT_CODE)
+        data_type: NUMBER
+
+verified_queries:
+  - question: What is the total planned production quantity for the baseline scenario?
+    sql: >
+      SELECT SUM(PLANNED_QTY) AS total_planned
+      FROM PRODUCT_WHEEL_OPT.DATA_MART.SCHEDULE_OUTPUT
+      WHERE SCENARIO_ID = 'baseline'
+  - question: Which products are scheduled on Line A1?
+    sql: >
+      SELECT DISTINCT PRODUCT_CODE, PRODUCT_FAMILY
+      FROM PRODUCT_WHEEL_OPT.DATA_MART.SCHEDULE_OUTPUT
+      WHERE LINE_CODE = 'A1' AND SCENARIO_ID = 'baseline'
+  - question: What are the total changeover hours by line?
+    sql: >
+      SELECT LINE_CODE, SUM(TOTAL_CHANGEOVER_TIME_HOURS) AS changeover_hrs
+      FROM PRODUCT_WHEEL_OPT.DATA_MART.SCHEDULE_OUTPUT
+      WHERE SCENARIO_ID = 'baseline'
+      GROUP BY LINE_CODE
+      ORDER BY changeover_hrs DESC

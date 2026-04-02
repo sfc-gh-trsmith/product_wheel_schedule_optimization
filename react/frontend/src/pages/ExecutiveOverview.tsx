@@ -3,6 +3,8 @@ import { useScenarioStore } from '../stores/scenarioStore';
 import { useSnowflakeQuery } from '../hooks/useSnowflakeQuery';
 import ChartContainer from '../components/ChartContainer';
 import KPICard from '../components/KPICard';
+import GuidanceBanner from '../components/GuidanceBanner';
+import NotesPanel from '../components/NotesPanel';
 import { SNOWFLAKE_COLORS, FAMILY_COLORS, useChartLayout } from '../types/charts';
 import type { FillRateByLine, ChangeoverByPlant, DemandVsPlanned, DosByFamily, UtilizationHeatmap } from '../types';
 
@@ -79,11 +81,33 @@ export default function ExecutiveOverview() {
         <p className="text-sm text-gray-500 dark:text-dark-muted">Snowcore Contract Manufacturing — Product Wheel Schedule Optimization</p>
       </div>
 
+      <GuidanceBanner
+        title="Your Plant Performance at a Glance"
+        description="This dashboard aggregates KPIs across all plants and production lines for the selected scenario. Use the sidebar to filter by plant or switch scenarios."
+        details="Key metrics: Fill Rate measures demand fulfillment (target ≥ 95%). Changeover Hours tracks non-productive time between product switches. Days of Supply indicates how many days of customer demand current inventory can cover. Contracts at Risk counts SLAs where achieved fill rate falls below the contractual target."
+      />
+
       <div className="grid grid-cols-4 gap-4">
-        <KPICard label="Global Fill Rate" value={metrics ? `${(metrics.globalFR * 100).toFixed(1)}%` : '—'} />
-        <KPICard label="Total Changeover Hrs" value={metrics ? metrics.coHrs.toFixed(1) : '—'} />
-        <KPICard label="Avg Days of Supply" value={metrics ? metrics.avgDos.toFixed(1) : '—'} />
-        <KPICard label="Contracts at Risk" value={metrics ? String(metrics.atRisk) : '—'} />
+        <KPICard
+          label="Global Fill Rate"
+          value={metrics ? `${(metrics.globalFR * 100).toFixed(1)}%` : '—'}
+          tooltip="Ratio of total planned production to total customer demand. Target ≥ 95% to meet most SLAs. Below 90% signals capacity or scheduling issues."
+        />
+        <KPICard
+          label="Total Changeover Hrs"
+          value={metrics ? metrics.coHrs.toFixed(1) : '—'}
+          tooltip="Sum of all product changeover (setup/cleaning) time across lines. Lower is better — each hour of changeover is lost production capacity."
+        />
+        <KPICard
+          label="Avg Days of Supply"
+          value={metrics ? metrics.avgDos.toFixed(1) : '—'}
+          tooltip="Average inventory coverage in days. Too high means excess holding cost; too low risks stockouts. Typical target: 7-14 days."
+        />
+        <KPICard
+          label="Contracts at Risk"
+          value={metrics ? String(metrics.atRisk) : '—'}
+          tooltip="Number of customer contracts where the current schedule's fill rate falls below the contractual SLA target. These need immediate attention."
+        />
       </div>
 
       <div className="grid grid-cols-5 gap-4">
@@ -92,6 +116,7 @@ export default function ExecutiveOverview() {
           <ChartContainer
             loading={frLoading}
             height={380}
+            description="Each bar shows the fill rate for a production line. The dashed red line marks the 95% SLA threshold. Lines below the line may be under-scheduled or capacity-constrained."
             data={(() => {
               if (!fillRate?.length) return [];
               const plants = [...new Set(fillRate.map((r) => r.plant_name))];
@@ -119,6 +144,7 @@ export default function ExecutiveOverview() {
           <ChartContainer
             loading={coLoading}
             height={380}
+            description="Stacked bars show changeover time by line within each plant. Product wheel sequencing minimizes these by grouping similar products."
             data={(() => {
               if (!changeover?.length) return [];
               const lines = [...new Set(changeover.map((r) => r.line_code))];
@@ -145,6 +171,7 @@ export default function ExecutiveOverview() {
           <ChartContainer
             loading={dvpLoading}
             height={350}
+            description="Compare forecasted demand against optimized production quantities by product family. Gaps indicate under-production that may cause service-level misses."
             data={
               dvp?.length
                 ? [
@@ -161,6 +188,7 @@ export default function ExecutiveOverview() {
           <ChartContainer
             loading={dosLoading}
             height={350}
+            description="Average days of supply by product family. Values above 14 days suggest overproduction; below 5 days signals stockout risk."
             data={
               dos?.length
                 ? [
@@ -184,6 +212,7 @@ export default function ExecutiveOverview() {
         <ChartContainer
           loading={utilLoading}
           height={300}
+          description="Shows how fully utilized each production line is across the planning horizon. Dark = high utilization, light = idle capacity. White gaps may indicate maintenance windows or calendar exclusions."
           data={(() => {
             if (!util?.length) return [];
             const lines = [...new Set(util.map((r) => r.line_code))];
@@ -197,6 +226,8 @@ export default function ExecutiveOverview() {
           layout={{ xaxis: { title: 'Date' }, yaxis: { title: 'Line' } }}
         />
       </div>
+
+      <NotesPanel page="overview" />
     </div>
   );
 }

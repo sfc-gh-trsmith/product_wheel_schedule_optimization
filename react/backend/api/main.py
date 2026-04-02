@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from .routes import overview, explorer, results, scenarios, contracts, common
+from .routes import overview, explorer, results, scenarios, contracts, common, agent, notes
 
 
 @asynccontextmanager
@@ -24,6 +24,8 @@ app.include_router(results.router, prefix="/api/results", tags=["results"])
 app.include_router(scenarios.router, prefix="/api/scenarios", tags=["scenarios"])
 app.include_router(contracts.router, prefix="/api/contracts", tags=["contracts"])
 app.include_router(common.router, prefix="/api/common", tags=["common"])
+app.include_router(agent.router, prefix="/api/agent", tags=["agent"])
+app.include_router(notes.router, prefix="/api/notes", tags=["notes"])
 
 
 @app.get("/api/health")

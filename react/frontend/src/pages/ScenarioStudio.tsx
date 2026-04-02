@@ -6,6 +6,9 @@ import { useSolverSSE } from '../hooks/useSolverSSE';
 import ChartContainer from '../components/ChartContainer';
 import KPICard from '../components/KPICard';
 import DataTable from '../components/DataTable';
+import GuidanceBanner from '../components/GuidanceBanner';
+import InfoTooltip from '../components/InfoTooltip';
+import NotesPanel from '../components/NotesPanel';
 import { FAMILY_COLORS, useChartLayout } from '../types/charts';
 import type { Plant, Line, DemandAgg, KPI, ScheduleRow, SolverParams } from '../types';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -152,43 +155,53 @@ export default function ScenarioStudio() {
         <p className="text-sm text-gray-500 dark:text-dark-muted">Configure parameters, run what-if optimizations, and compare results</p>
       </div>
 
+      <GuidanceBanner
+        title="How to Run a What-If Scenario"
+        description="1. Adjust parameters on the left. 2. Preview the demand impact on the right. 3. Click 'Run Optimization' to solve. 4. Compare results against the baseline. 5. Save or discard."
+        details="Cost Weights control the optimizer's trade-offs: increase Backorder Penalty to prioritize fill rate, increase Changeover Cost to minimize product switches, increase Inventory Holding to reduce stock. Demand Scenarios let you simulate demand spikes or drops. The solver runs a Mixed-Integer Program (MIP) on each production line sequentially."
+        variant="tip"
+      />
+
       <div className="grid grid-cols-5 gap-6">
         <div className="col-span-2 space-y-3">
           <h2 className="text-lg font-semibold">Parameter Configuration</h2>
 
-          <Section title="Planning Horizon">
-            <RangeInput label="Horizon Days" value={horizonDays} min={7} max={28} onChange={setHorizonDays} />
+          <Section title="Planning Horizon" tooltip="How far into the future the optimizer plans production.">
+            <RangeInput label="Horizon Days" value={horizonDays} min={7} max={28} onChange={setHorizonDays} tooltip="Number of days to schedule. Longer horizons give better optimization but take longer to solve." />
             <SelectInput label="Shifts per Day" value={String(shiftsPerDay)} options={['1', '2', '3']} onChange={(v) => setShiftsPerDay(Number(v))} />
           </Section>
 
-          <Section title="Cost Weights">
-            <RangeInput label="Inventory Holding Cost Mult" value={invCostMult} min={0.1} max={5} step={0.1} onChange={setInvCostMult} />
-            <RangeInput label="Backorder Penalty Mult" value={boCostMult} min={0.5} max={10} step={0.5} onChange={setBoCostMult} />
-            <RangeInput label="Changeover Cost Mult" value={coCostMult} min={0.1} max={5} step={0.1} onChange={setCoCostMult} />
+          <Section title="Cost Weights" tooltip="Controls how the optimizer balances competing objectives. Increase a weight to make the optimizer try harder to minimize that cost.">
+            <RangeInput label="Inventory Holding Cost Mult" value={invCostMult} min={0.1} max={5} step={0.1} onChange={setInvCostMult} tooltip="Higher values discourage building excess inventory. Reduce for build-ahead strategies." />
+            <RangeInput label="Backorder Penalty Mult" value={boCostMult} min={0.5} max={10} step={0.5} onChange={setBoCostMult} tooltip="Higher values force the optimizer to avoid missed demand. Increase if fill rate is too low." />
+            <RangeInput label="Changeover Cost Mult" value={coCostMult} min={0.1} max={5} step={0.1} onChange={setCoCostMult} tooltip="Higher values encourage longer production runs with fewer product switches. May reduce fill rate for niche products." />
           </Section>
 
-          <Section title="Line Scope">
+          <Section title="Line Scope" tooltip="Select which plants and lines to include in the optimization run.">
             <MultiSelect label="Plants" options={allPlants} value={plantSel} onChange={setPlantSel} />
             <MultiSelect label="Lines" options={filteredLines} value={lineSel} onChange={setLineSel} />
-            <RangeInput label="Max Products per Line" value={maxProducts} min={5} max={25} onChange={setMaxProducts} />
+            <RangeInput label="Max Products per Line" value={maxProducts} min={5} max={25} onChange={setMaxProducts} tooltip="Limits the number of distinct products assigned to each line. Lower = faster solve, but may not cover all demand." />
           </Section>
 
-          <Section title="Solver Settings">
+          <Section title="Solver Settings" tooltip="Controls the MIP solver's behavior and quality thresholds.">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-500 dark:text-dark-muted">Time Limit (sec)</label>
+              <div className="flex items-center gap-1">
+                <label className="text-xs text-gray-500 dark:text-dark-muted">Time Limit (sec)</label>
+                <InfoTooltip text="Maximum seconds the solver spends on each line. Increase for better solutions on complex problems." iconSize={10} />
+              </div>
               <input type="number" value={timeLimit} min={10} max={600} step={10} onChange={(e) => setTimeLimit(Number(e.target.value))} className="px-2 py-1 text-sm rounded border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg" />
             </div>
-            <RangeInput label="MIP Gap (%)" value={mipGap} min={0.1} max={10} step={0.1} onChange={setMipGap} />
+            <RangeInput label="MIP Gap (%)" value={mipGap} min={0.1} max={10} step={0.1} onChange={setMipGap} tooltip="Solution quality threshold. 1% means the solver stops when within 1% of the theoretical optimum. Lower = better solution but slower." />
           </Section>
 
-          <Section title="Demand Scenarios">
-            <RangeInput label="Demand Multiplier" value={demandMult} min={0.5} max={2} step={0.1} onChange={setDemandMult} />
+          <Section title="Demand Scenarios" tooltip="Simulate demand changes to test schedule robustness.">
+            <RangeInput label="Demand Multiplier" value={demandMult} min={0.5} max={2} step={0.1} onChange={setDemandMult} tooltip="Scales all demand uniformly. 1.5 = 50% demand increase across all products." />
             <SelectInput label="Shock Family" value={shockFamily} options={['None', ...allFamilies]} onChange={setShockFamily} />
-            <RangeInput label="Shock Magnitude (%)" value={shockPct} min={-50} max={100} step={5} onChange={setShockPct} />
+            <RangeInput label="Shock Magnitude (%)" value={shockPct} min={-50} max={100} step={5} onChange={setShockPct} tooltip="Additional demand change applied only to the selected product family. Simulates targeted demand spikes or drops." />
           </Section>
 
-          <Section title="Inventory Override">
-            <RangeInput label="Starting Inventory Mult" value={invMult} min={0} max={3} step={0.1} onChange={setInvMult} />
+          <Section title="Inventory Override" tooltip="Adjust starting inventory positions for what-if analysis.">
+            <RangeInput label="Starting Inventory Mult" value={invMult} min={0} max={3} step={0.1} onChange={setInvMult} tooltip="Scales initial inventory. 0 = start from empty. 0.5 = half current stock. Useful for testing stockout recovery." />
           </Section>
         </div>
 
@@ -197,6 +210,7 @@ export default function ScenarioStudio() {
           <ChartContainer
             title="Demand Profile: Baseline vs. Adjusted"
             height={300}
+            description="Shows how your demand parameter changes affect each product family. Gray = original demand. Blue = adjusted demand with your multiplier and shock settings applied."
             data={previewData.length ? [
               { type: 'bar' as const, x: previewData.map((r) => r.family), y: previewData.map((r) => r.base), name: 'Baseline', marker: { color: '#475569' } },
               { type: 'bar' as const, x: previewData.map((r) => r.family), y: previewData.map((r) => r.adj), name: 'Adjusted', marker: { color: '#29B5E8' } },
@@ -204,8 +218,8 @@ export default function ScenarioStudio() {
             layout={{ barmode: 'group', yaxis: { title: 'Demand Qty' } }}
           />
           <div className="grid grid-cols-2 gap-4">
-            <KPICard label="Estimated Solve Time" value={`~${estTime} sec`} />
-            <KPICard label="Problem Size" value={`${nLinesSel} lines x ${nSlots} slots x ${maxProducts} products`} />
+            <KPICard label="Estimated Solve Time" value={`~${estTime} sec`} tooltip="Rough estimate based on problem size. Actual time depends on solver convergence." />
+            <KPICard label="Problem Size" value={`${nLinesSel} lines x ${nSlots} slots x ${maxProducts} products`} tooltip="Total decision variables scale with these dimensions. Larger problems take longer but may find better global solutions." />
           </div>
         </div>
       </div>
@@ -241,10 +255,10 @@ export default function ScenarioStudio() {
         <div className="space-y-6">
           <h2 className="text-lg font-semibold">Scenario Comparison</h2>
           <div className="grid grid-cols-4 gap-4">
-            <KPICard label="Fill Rate" value={`${(nm.fill_rate * 100).toFixed(1)}%`} delta={`${((nm.fill_rate - bm.fill_rate) * 100).toFixed(1)} pp`} deltaColor={nm.fill_rate >= bm.fill_rate ? 'green' : 'red'} />
-            <KPICard label="Changeover Hrs" value={nm.changeover_hrs.toFixed(1)} delta={`${(nm.changeover_hrs - bm.changeover_hrs).toFixed(1)}`} deltaColor={nm.changeover_hrs <= bm.changeover_hrs ? 'green' : 'red'} />
-            <KPICard label="Total Planned" value={nm.total_planned.toLocaleString()} delta={`${(nm.total_planned - bm.total_planned).toLocaleString()}`} deltaColor={nm.total_planned >= bm.total_planned ? 'green' : 'red'} />
-            <KPICard label="Objective Cost" value={`$${nm.objective_cost.toLocaleString()}`} delta={`$${(nm.objective_cost - bm.objective_cost).toLocaleString()}`} deltaColor={nm.objective_cost <= bm.objective_cost ? 'green' : 'red'} />
+            <KPICard label="Fill Rate" value={`${(nm.fill_rate * 100).toFixed(1)}%`} delta={`${((nm.fill_rate - bm.fill_rate) * 100).toFixed(1)} pp`} deltaColor={nm.fill_rate >= bm.fill_rate ? 'green' : 'red'} tooltip="Demand fulfillment rate. Green delta = improvement over baseline." />
+            <KPICard label="Changeover Hrs" value={nm.changeover_hrs.toFixed(1)} delta={`${(nm.changeover_hrs - bm.changeover_hrs).toFixed(1)}`} deltaColor={nm.changeover_hrs <= bm.changeover_hrs ? 'green' : 'red'} tooltip="Total changeover time. Lower is better — green means fewer changeover hours than baseline." />
+            <KPICard label="Total Planned" value={nm.total_planned.toLocaleString()} delta={`${(nm.total_planned - bm.total_planned).toLocaleString()}`} deltaColor={nm.total_planned >= bm.total_planned ? 'green' : 'red'} tooltip="Total units scheduled for production." />
+            <KPICard label="Objective Cost" value={`$${nm.objective_cost.toLocaleString()}`} delta={`$${(nm.objective_cost - bm.objective_cost).toLocaleString()}`} deltaColor={nm.objective_cost <= bm.objective_cost ? 'green' : 'red'} tooltip="Weighted total cost (inventory + backorder + changeover). Lower is better." />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -261,6 +275,7 @@ export default function ScenarioStudio() {
           <ChartContainer
             title="KPI Comparison Radar"
             height={400}
+            description="Normalized radar chart comparing baseline vs new scenario across three dimensions. Closer to the outer edge = better performance."
             data={[
               { type: 'scatterpolar' as const, r: [bm.fill_rate, bm.changeover_hrs > 0 ? 1 - bm.changeover_hrs / Math.max(bm.changeover_hrs, nm.changeover_hrs) : 0, 1 - bm.objective_cost / Math.max(bm.objective_cost, nm.objective_cost, 1)], theta: ['Fill Rate', 'Changeover (inv)', 'Cost (inv)'], fill: 'toself', name: 'Baseline', line: { color: '#475569' } },
               { type: 'scatterpolar' as const, r: [nm.fill_rate, nm.changeover_hrs > 0 ? 1 - nm.changeover_hrs / Math.max(bm.changeover_hrs, nm.changeover_hrs) : 0, 1 - nm.objective_cost / Math.max(bm.objective_cost, nm.objective_cost, 1)], theta: ['Fill Rate', 'Changeover (inv)', 'Cost (inv)'], fill: 'toself', name: 'New Scenario', line: { color: '#29B5E8' } },
@@ -274,24 +289,32 @@ export default function ScenarioStudio() {
           </div>
         </div>
       )}
+
+      <NotesPanel page="studio" entityType="scenario" entityId={newScenarioId || baseline || ''} />
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, tooltip }: { title: string; children: React.ReactNode; tooltip?: string }) {
   return (
     <div className="rounded-lg bg-gray-50 dark:bg-dark-surface p-3 space-y-2">
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="flex items-center gap-1.5">
+        <h3 className="text-sm font-semibold">{title}</h3>
+        {tooltip && <InfoTooltip text={tooltip} iconSize={12} />}
+      </div>
       {children}
     </div>
   );
 }
 
-function RangeInput({ label, value, min, max, step = 1, onChange }: { label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void }) {
+function RangeInput({ label, value, min, max, step = 1, onChange, tooltip }: { label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void; tooltip?: string }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex justify-between text-xs">
-        <span className="text-gray-500 dark:text-dark-muted">{label}</span>
+        <div className="flex items-center gap-1">
+          <span className="text-gray-500 dark:text-dark-muted">{label}</span>
+          {tooltip && <InfoTooltip text={tooltip} iconSize={10} />}
+        </div>
         <span className="font-medium">{value}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-sf-blue" />

@@ -22,13 +22,15 @@ The cost of inaction is not the scheduling error that makes headlines. It is the
 
 Five structural pain points define the scheduling challenge in contract manufacturing.
 
+![Scheduling Pain Points](images/table_pain_points.png)
+
 **Fragmented data, fragmented decisions.** Demand forecasts, changeover matrices, line calendars, throughput rates, and inventory positions live in separate systems. No single view exists to evaluate trade-offs between fill rate, changeover time, and inventory cost. Schedulers rely on experience and approximation rather than optimization.
 
-**Manual wheel construction takes hours and delivers heuristics.** A typical production scheduler spends 3 to 5 hours per week building a product wheel for a single line. The process involves cross-referencing spreadsheets, applying tribal knowledge about allergen sequencing, and negotiating with customer service teams about priority. The output is a feasible schedule, not an optimal one.
+**Manual wheel construction takes hours and delivers heuristics.** Industry practitioners estimate that a typical production scheduler spends 3 to 5 hours per week building a product wheel for a single line. The process involves cross-referencing spreadsheets, applying tribal knowledge about allergen sequencing, and negotiating with customer service teams about priority. The output is a feasible schedule, not an optimal one.
 
 **Contractual SLAs create competing constraints.** Each customer contract specifies a fill rate target (typically 95 to 98 percent), a maximum days-of-supply threshold, and minimum annual volumes by SKU. Optimizing for one customer often degrades service to another. Without mathematical optimization, these trade-offs are invisible until they appear as SLA breaches at quarter-end.
 
-**Changeover sequencing is solved by habit, not mathematics.** The sequence in which products run on a shared line determines total changeover time. A product wheel with 10 SKUs has over 3 million possible sequences. Schedulers use rules of thumb that produce workable but suboptimal sequences, leaving 15 to 40 percent of potential changeover reduction on the table.
+**Changeover sequencing is solved by habit, not mathematics.** The sequence in which products run on a shared line determines total changeover time. A product wheel with 10 SKUs has over 3 million possible sequences. Schedulers use rules of thumb that produce workable but suboptimal sequences. Orca Lean's analysis of American manufacturing operations documents that systematic changeover optimization can recover up to 40 percent of changeover time.
 
 **What-if analysis is effectively impossible.** When demand shifts, a new customer contract arrives, or a line goes down for maintenance, the scheduler rebuilds the wheel from scratch. There is no mechanism to rapidly evaluate alternative scenarios, quantify the impact of parameter changes, or compare baseline and adjusted schedules side by side.
 
@@ -38,27 +40,11 @@ Five structural pain points define the scheduling challenge in contract manufact
 
 ### Before: Disconnected Systems, Manual Heuristics
 
-| Dimension | Current State |
-|-----------|--------------|
-| Data sources | 3+ systems (ERP, MES, spreadsheets), no integration |
-| Scheduling time | 3-5 hours per line per week |
-| Optimization method | Rules of thumb, tribal knowledge |
-| What-if capability | None (full rebuild required) |
-| Changeover efficiency | Unoptimized sequencing |
-| SLA visibility | Quarterly retrospective |
-| Fill rate | 90-94% average |
+![Before State](images/table_before_state.png)
 
 ### After: Unified Platform, Mathematical Optimization
 
-| Dimension | Optimized State |
-|-----------|----------------|
-| Data sources | Single platform (Snowflake), all tables unified |
-| Scheduling time | Minutes (automated MIP solver) |
-| Optimization method | Mixed-integer programming (PuLP/CBC + NVIDIA cuOpt GPU) |
-| What-if capability | Interactive scenario studio with real-time comparison |
-| Changeover efficiency | Mathematically optimal sequencing |
-| SLA visibility | Real-time contract compliance monitoring |
-| Fill rate | Targeting 98%+ with constraint-aware optimization |
+![After State](images/table_after_state.png)
 
 The transformation is not incremental. It replaces a manual, heuristic process with a mathematically rigorous optimization that runs in minutes, evaluates millions of possible sequences, and delivers an executable schedule with full visibility into trade-offs.
 
@@ -67,6 +53,8 @@ The transformation is not incremental. It replaces a manual, heuristic process w
 ## 4. What We Will Achieve
 
 Three measurable outcomes define success.
+
+![Measurable Outcomes](images/outcomes_cards.png)
 
 **Fill rate improvement to 98 percent or higher.** The mixed-integer program explicitly models contractual SLA targets as constraints, ensuring that production allocation prioritizes demand satisfaction. Backorder penalties in the objective function create strong economic incentives to meet fill rate targets. Industry studies document that organizations implementing constraint-based production optimization achieve 2 to 5 percentage point improvements in OTIF performance.
 
@@ -96,6 +84,8 @@ Four pillars of the Snowflake AI Data Cloud make this solution possible.
 
 The solution follows a clear data-to-decision pipeline.
 
+![Data-to-Decision Pipeline](images/pipeline_flow.png)
+
 **Step 1: Data Foundation.** The deploy script creates the PRODUCT_WHEEL_OPT database with three schemas (RAW, ATOMIC, DATA_MART) and 16 tables covering the complete manufacturing data model. A stored procedure generates and seeds realistic demo data across 3 plants, 8 production lines, 49 products, 15 formulations, 10 customers, and 10 contracts. AI_COMPLETE generates natural-language product and formulation descriptions.
 
 **Step 2: GPU-Accelerated Optimization.** A Snowflake Notebook running on SPCS with GPU_NV_S compute formulates and solves a mixed-integer program for each production line. Decision variables include binary slot assignments, continuous production quantities, inventory levels, backorders, and changeover indicators. The objective minimizes total changeover cost plus inventory holding cost plus backorder penalty. Key constraints enforce one product per slot, capacity limits, inventory balance, changeover linking, and demand satisfaction at horizon end. The solver writes 305 slot-level schedule rows, 48 KPIs, and 596 enriched forecast rows to DATA_MART.
@@ -108,48 +98,51 @@ The solution follows a clear data-to-decision pipeline.
 
 ## Solution Architecture
 
-```
-                        Snowflake AI Data Cloud
- ┌─────────────────────────────────────────────────────────────┐
- │                                                             │
- │  ┌──────────┐    ┌──────────────┐    ┌──────────────────┐  │
- │  │   RAW    │    │   ATOMIC     │    │    DATA_MART     │  │
- │  │  Stages  │───>│  16 Tables   │───>│  Schedule +      │  │
- │  │ Notebook │    │  Dims+Facts  │    │  KPIs + Forecast │  │
- │  └──────────┘    └──────────────┘    └────────┬─────────┘  │
- │                                               │             │
- │  ┌──────────────────────────────────┐         │             │
- │  │  GPU Notebook (SPCS)             │─────────┘             │
- │  │  PuLP MIP + NVIDIA cuOpt         │                       │
- │  │  CBC Fallback                    │                       │
- │  └──────────────────────────────────┘                       │
- │                                                             │
- │  ┌───────────────────────────┐  ┌───────────────────────┐  │
- │  │  Streamlit (SiS)         │  │  SOLVE_LINE_SP        │  │
- │  │  5 Pages + Inline Solver │  │  15-param SP          │  │
- │  └───────────────────────────┘  └───────────────────────┘  │
- └─────────────────────────────────────────────────────────────┘
+![Solution Architecture](images/architecture_diagram.png)
 
- ┌─────────────────────────────────────────────────────────────┐
- │  React + FastAPI (Docker / SPCS)                            │
- │  5 Pages | SSE Solver | Plotly | TanStack | Zustand         │
- │  nginx + supervisord | Port 5172                            │
- └─────────────────────────────────────────────────────────────┘
-```
+The architecture follows a left-to-right data journey pattern.
+
+**Source Systems (Left):** ERP provides demand forecasts and customer contracts. MES provides line calendars, throughput rates, and production events. Tribal spreadsheets provide changeover matrices and allergen sequencing rules. Warehouse management provides inventory positions.
+
+**Snowflake Platform (Center):**
+
+- **Ingestion:** Raw data lands in the RAW schema via COPY INTO and stored procedures. A seeding stored procedure generates synthetic data for demo environments.
+- **ATOMIC Schema:** 16 normalized dimension and fact tables provide the typed, governed parameter set the optimizer consumes. Tables refresh on a weekly cadence aligned with the planning horizon.
+- **GPU Notebook (SPCS):** A Snowflake Notebook running on GPU_NV_S compute executes the PuLP-based MIP formulation with NVIDIA cuOpt acceleration (CBC fallback). Solves 8 lines in under 5 minutes. Writes results to DATA_MART.
+- **DATA_MART Schema:** Three output tables store slot-level schedules (FACT_LINE_SCHEDULE_OPTIMIZED), line-by-family KPIs (FACT_SERVICE_AND_SCHEDULE_KPI), and enriched demand forecasts with prediction intervals (FACT_DEMAND_FORECAST_ENRICHED).
+
+**Consumer Applications (Right):**
+
+- **Streamlit (SiS):** 5 pages deployed natively inside Snowflake. Zero infrastructure. Inline CBC solver for interactive what-if.
+- **React + FastAPI (Docker / SPCS):** Production-grade UI with real-time SSE solver streaming, comprehensive data exploration, and SPCS deployment via service spec.
+- **Future:** Cortex Analyst for natural language metric queries, Cortex Search for RAG over SOPs and changeover procedures.
+
+**Data Flow Annotations:**
+
+| Flow | Frequency | Volume |
+|------|-----------|--------|
+| ERP demand forecasts to ATOMIC | Weekly | ~600 rows per forecast cycle |
+| MES line calendars to ATOMIC | Weekly | ~700 slots per 2-week horizon |
+| Changeover matrices to ATOMIC | Monthly or on-change | ~560 product pairs |
+| Optimizer to DATA_MART | Weekly (batch) or on-demand (interactive) | ~305 schedule rows + 48 KPIs |
 
 ---
 
 ## Snowflake Components Used
 
-| Component | Purpose |
-|-----------|---------|
-| Snowpark Container Services | GPU compute pool for MIP solver notebook |
-| Snowflake Notebooks | GPU-accelerated optimization with PuLP + cuOpt |
-| Streamlit in Snowflake | 5-page interactive analytics application |
-| Snowpark Python | Data manipulation and stored procedure runtime |
-| AI_COMPLETE | Natural language product description enrichment |
-| External Access Integration | PyPI and NVIDIA package installation |
-| Stages | Notebook, Streamlit, and PuLP wheel artifact storage |
+![Snowflake Components](images/table_snowflake_components.png)
+
+---
+
+## About This Solution
+
+### For Executives
+
+Product Wheel Schedule Optimization solves one of the most persistent problems in contract manufacturing: building production schedules that simultaneously satisfy customer fill rate targets, minimize costly changeovers, and control inventory levels. Today, schedulers spend hours each week manually constructing these schedules using spreadsheets and tribal knowledge, producing plans that are feasible but far from optimal. This solution replaces that manual process with a mathematical optimization engine that evaluates millions of possible sequences in minutes. The result is a schedule that the business can trust, with full visibility into the trade-offs, and the ability to run what-if scenarios instantly when conditions change. Everything runs inside Snowflake, so data never moves, security is maintained, and the total cost of ownership is a fraction of standalone scheduling software.
+
+### For Technical Teams
+
+The core is a mixed-integer program (MIP) formulated in PuLP with five constraint classes: single-product-per-slot assignment, capacity-throughput linking via big-M, flow-conservation inventory balance, changeover-indicator coupling through binary variable products, and terminal demand satisfaction. The objective minimizes a weighted sum of changeover cost, inventory holding cost, and backorder penalty. The MIP runs on Snowpark Container Services with GPU_NV_S compute using NVIDIA cuOpt for GPU-accelerated branch-and-bound; CBC provides a CPU fallback. The data model comprises 16 tables in an ATOMIC schema (dimensions: plant, line, product, formulation, customer; facts: demand forecast, line calendar, throughput, changeover, inventory, production order, contract, costing) with 3 DATA_MART output tables. The solve function is parameterized with 15 configurable inputs (horizon, shifts, cost multipliers, demand shocks, line scope, MIP gap, time limit) and every run is scenario-tagged for auditability. Interactive solving uses a FastAPI SSE endpoint that streams per-line solver progress to the React frontend via Zustand state management and @tanstack/react-query. The Streamlit deployment uses an inline CBC solver with identical MIP formulation, packaged as a .whl artifact uploaded to the SiS stage.
 
 ---
 
