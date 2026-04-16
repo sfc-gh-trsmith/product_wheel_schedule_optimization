@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 900 470">
+<defs>
+  <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" style="stop-color:#29B5E8;stop-opacity:1"/>
+    <stop offset="100%" style="stop-color:#11567F;stop-opacity:1"/>
+  </linearGradient>
+</defs>
+<rect width="900" height="470" fill="#FFFFFF"/>
+<rect x="30" y="20" width="840" height="50" rx="6" fill="#29B5E8" opacity="0.12"/>
+<text x="450.0" y="52" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#11567F" text-anchor="middle">Snowflake Components Used</text>
+<rect x="30" y="85" width="300" height="44" rx="4" fill="#11567F"/>
+<text x="180" y="113" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600" fill="white" text-anchor="middle">Component</text>
+<rect x="330" y="85" width="540" height="44" rx="4" fill="#11567F"/>
+<text x="600" y="113" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600" fill="white" text-anchor="middle">Purpose</text>
+<rect x="30" y="129" width="300" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="45" y="157" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#29B5E8">Snowpark Container Services</text>
+<rect x="330" y="129" width="540" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="345" y="157" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569">GPU compute pool for MIP solver notebook</text>
+<rect x="30" y="173" width="300" height="44" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+<text x="45" y="201" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#29B5E8">Snowflake Notebooks</text>
+<rect x="330" y="173" width="540" height="44" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+<text x="345" y="201" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569">GPU-accelerated optimization with PuLP + cuOpt</text>
+<rect x="30" y="217" width="300" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="45" y="245" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#29B5E8">Streamlit in Snowflake</text>
+<rect x="330" y="217" width="540" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="345" y="245" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569">5-page interactive analytics application</text>
+<rect x="30" y="261" width="300" height="44" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+<text x="45" y="289" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#29B5E8">Snowpark Python</text>
+<rect x="330" y="261" width="540" height="44" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+<text x="345" y="289" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569">Data manipulation and stored procedure runtime</text>
+<rect x="30" y="305" width="300" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="45" y="333" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#29B5E8">AI_COMPLETE</text>
+<rect x="330" y="305" width="540" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="345" y="333" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569">Natural language product description enrichment</text>
+<rect x="30" y="349" width="300" height="44" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+<text x="45" y="377" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#29B5E8">External Access Integration</text>
+<rect x="330" y="349" width="540" height="44" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+<text x="345" y="377" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569">PyPI and NVIDIA package installation</text>
+<rect x="30" y="393" width="300" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="45" y="421" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#29B5E8">Stages</text>
+<rect x="330" y="393" width="540" height="44" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1"/>
+<text x="345" y="421" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569">Notebook, Streamlit, and PuLP wheel artifact storage</text>
+</svg>

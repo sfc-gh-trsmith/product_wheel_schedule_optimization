@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 700">
+<defs>
+  <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" style="stop-color:#29B5E8;stop-opacity:1"/>
+    <stop offset="100%" style="stop-color:#11567F;stop-opacity:1"/>
+  </linearGradient>
+</defs>
+<rect width="1000" height="700" fill="#FFFFFF"/>
+<text x="500.0" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" fill="#11567F" text-anchor="middle">Solution Architecture</text>
+<rect x="40" y="60" width="920" height="440" rx="16" fill="#F8FAFC" stroke="#29B5E8" stroke-width="2"/>
+<text x="60" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#29B5E8">Snowflake AI Data Cloud</text>
+<rect x="70" y="110" width="200" height="120" rx="10" fill="white" stroke="#E2E8F0" stroke-width="1.5"/>
+<rect x="70" y="110" width="200" height="30" rx="10" fill="#8B5CF6" opacity="0.15"/>
+<text x="170" y="131" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#8B5CF6" text-anchor="middle">RAW Schema</text>
+<text x="170" y="160" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Stages</text>
+<text x="170" y="178" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Notebooks</text>
+<text x="170" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Stored Procedures</text>
+<rect x="320" y="110" width="200" height="120" rx="10" fill="white" stroke="#E2E8F0" stroke-width="1.5"/>
+<rect x="320" y="110" width="200" height="30" rx="10" fill="#29B5E8" opacity="0.15"/>
+<text x="420" y="131" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#29B5E8" text-anchor="middle">ATOMIC Schema</text>
+<text x="420" y="160" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">16 Tables</text>
+<text x="420" y="178" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Dims + Facts</text>
+<text x="420" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Plants, Lines, Products...</text>
+<rect x="570" y="110" width="200" height="120" rx="10" fill="white" stroke="#E2E8F0" stroke-width="1.5"/>
+<rect x="570" y="110" width="200" height="30" rx="10" fill="#30D158" opacity="0.15"/>
+<text x="670" y="131" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#30D158" text-anchor="middle">DATA_MART Schema</text>
+<text x="670" y="160" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Optimized Schedules</text>
+<text x="670" y="178" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">KPIs (48 metrics)</text>
+<text x="670" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Enriched Forecasts</text>
+<line x1="270" y1="170" x2="320" y2="170" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="520" y1="170" x2="570" y2="170" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="70" y="270" width="350" height="100" rx="10" fill="white" stroke="#F59E0B" stroke-width="2"/>
+<rect x="70" y="270" width="350" height="30" rx="10" fill="#F59E0B" opacity="0.15"/>
+<text x="245" y="291" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#F59E0B" text-anchor="middle">GPU Notebook (SPCS)</text>
+<text x="245" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">PuLP MIP + NVIDIA cuOpt</text>
+<text x="245" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">CBC Fallback | GPU_NV_S Compute Pool</text>
+<line x1="420" y1="320" x2="570" y2="220" stroke="#F59E0B" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="70" y="400" width="350" height="85" rx="10" fill="white" stroke="#29B5E8" stroke-width="2"/>
+<rect x="70" y="400" width="350" height="30" rx="10" fill="#29B5E8" opacity="0.15"/>
+<text x="245" y="421" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#29B5E8" text-anchor="middle">Streamlit in Snowflake (SiS)</text>
+<text x="245" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">5 Pages + Inline CBC Solver</text>
+<text x="245" y="468" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Executive | Explorer | Results | Scenarios | Contracts</text>
+<rect x="470" y="270" width="290" height="100" rx="10" fill="white" stroke="#E2E8F0" stroke-width="1.5"/>
+<rect x="470" y="270" width="290" height="30" rx="10" fill="#11567F" opacity="0.15"/>
+<text x="615" y="291" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#11567F" text-anchor="middle">SOLVE_LINE_SP</text>
+<text x="615" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">15-Parameter Stored Procedure</text>
+<text x="615" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#475569" text-anchor="middle">Programmatic Solver Invocation</text>
+<rect x="40" y="530" width="920" height="100" rx="16" fill="white" stroke="#EF4444" stroke-width="2"/>
+<text x="500" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#EF4444">React + FastAPI (Docker / SPCS)</text>
+<text x="500" y="595" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#475569">5 Pages | SSE Streaming | Plotly | TanStack | Zustand | nginx | Port 5172</text>
+<line x1="670" y1="230" x2="670" y2="400" stroke="#29B5E8" stroke-width="1.5" stroke-dasharray="6,3"/>
+<line x1="670" y1="400" x2="500" y2="530" stroke="#29B5E8" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow)"/>
+<rect x="100" y="650" width="800" height="35" rx="8" fill="#29B5E8" opacity="0.08"/>
+<text x="500" y="674" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#11567F" text-anchor="middle">Data never leaves Snowflake. GPU compute, optimization, and analytics execute within the security boundary.</text>
+</svg>

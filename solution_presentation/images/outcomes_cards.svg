@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 920 280">
+<defs>
+  <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" style="stop-color:#29B5E8;stop-opacity:1"/>
+    <stop offset="100%" style="stop-color:#11567F;stop-opacity:1"/>
+  </linearGradient>
+</defs>
+<rect width="920" height="280" fill="#FFFFFF"/>
+<text x="460.0" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="700" fill="#11567F" text-anchor="middle">Measurable Outcomes</text>
+<rect x="40.0" y="55" width="260" height="210" rx="12" fill="white" stroke="#29B5E8" stroke-width="2"/>
+<rect x="40.0" y="55" width="260" height="6" rx="3" fill="#29B5E8"/>
+<text x="170.0" y="115" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="700" fill="#29B5E8" text-anchor="middle">98%+</text>
+<text x="170.0" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#1E293B" text-anchor="middle">Fill Rate</text>
+<text x="170.0" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#475569" text-anchor="middle">Constraint-aware</text>
+<text x="170.0" y="215" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#475569" text-anchor="middle">optimization</text>
+<rect x="330.0" y="55" width="260" height="210" rx="12" fill="white" stroke="#30D158" stroke-width="2"/>
+<rect x="330.0" y="55" width="260" height="6" rx="3" fill="#30D158"/>
+<text x="460.0" y="115" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="700" fill="#30D158" text-anchor="middle">15%+</text>
+<text x="460.0" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#1E293B" text-anchor="middle">Changeover</text>
+<text x="460.0" y="170" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#1E293B" text-anchor="middle">Reduction</text>
+<text x="460.0" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#475569" text-anchor="middle">Optimal sequencing</text>
+<text x="460.0" y="215" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#475569" text-anchor="middle">across lines</text>
+<rect x="620.0" y="55" width="260" height="210" rx="12" fill="white" stroke="#8B5CF6" stroke-width="2"/>
+<rect x="620.0" y="55" width="260" height="6" rx="3" fill="#8B5CF6"/>
+<text x="750.0" y="115" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="700" fill="#8B5CF6" text-anchor="middle">Minutes</text>
+<text x="750.0" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#1E293B" text-anchor="middle">Scheduling</text>
+<text x="750.0" y="170" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#1E293B" text-anchor="middle">Cycle</text>
+<text x="750.0" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#475569" text-anchor="middle">From hours to</text>
+<text x="750.0" y="215" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#475569" text-anchor="middle">automated MIP</text>
+</svg>
